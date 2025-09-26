@@ -11,7 +11,8 @@ const nextConfig = {
     serverComponentsExternalPackages: [],
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+    NEXT_PUBLIC_API_URL:
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
   },
   webpack: (config, { isServer }) => {
     // Add path aliases for TypeScript
