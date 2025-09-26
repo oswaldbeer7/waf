@@ -4,12 +4,14 @@ FROM node:18-alpine AS base
 # Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
+# Install pnpm
+RUN npm install -g pnpm@9
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json pnpm-lock.yaml* ./
 RUN \
-  if [ -f package-lock.json ]; then npm ci --only=production; \
+  if [ -f pnpm-lock.yaml ]; then pnpm install --prod; \
   else echo "Lockfile not found." && exit 1; \
   fi
 
@@ -24,7 +26,7 @@ RUN mkdir -p public
 # Next.js collects completely anonymous telemetry data about general usage.
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN npm run build
+RUN pnpm build
 
 # Production image, copy all the files and run next
 FROM base AS runner
