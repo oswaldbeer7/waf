@@ -28,6 +28,24 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+detect_server_ip() {
+    # Try to detect the primary network interface IP
+    # First try to get IP from default route
+    IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7}' | head -1)
+
+    if [ -z "$IP" ] || [ "$IP" = "" ]; then
+        # Fallback to hostname resolution
+        IP=$(hostname -I 2>/dev/null | awk '{print $1}' | head -1)
+    fi
+
+    if [ -z "$IP" ] || [ "$IP" = "" ]; then
+        # Final fallback to localhost
+        IP="localhost"
+    fi
+
+    echo "$IP"
+}
+
 TEST_DOMAIN="test.example.local"
 TEST_ORIGIN="http://httpbin.org"
 
@@ -35,7 +53,7 @@ test_services_health() {
     log_info "Testing service health..."
 
     # Test backend API
-    if curl -s http://localhost:8080/api/health > /dev/null; then
+    if curl -s http://$SERVER_IP:8080/api/health > /dev/null; then
         log_success "Backend API is healthy"
     else
         log_error "Backend API is not responding"
@@ -43,14 +61,14 @@ test_services_health() {
     fi
 
     # Test dashboard
-    if curl -s http://localhost:3000/api/health > /dev/null; then
+    if curl -s http://$SERVER_IP:3000/api/health > /dev/null; then
         log_success "Dashboard is healthy"
     else
         log_warning "Dashboard health check not available (expected for Next.js)"
     fi
 
     # Test Caddy admin API
-    if curl -s http://localhost:2019/config/ > /dev/null; then
+    if curl -s http://$SERVER_IP:2019/config/ > /dev/null; then
         log_success "Caddy admin API is healthy"
     else
         log_error "Caddy admin API is not responding"
@@ -62,7 +80,7 @@ test_api_endpoints() {
     log_info "Testing API endpoints..."
 
     # Test domains endpoint
-    if curl -s http://localhost:8080/api/domains | grep -q '\[\]'; then
+    if curl -s http://$SERVER_IP:8080/api/domains | grep -q '\[\]'; then
         log_success "Domains API endpoint working"
     else
         log_error "Domains API endpoint not working"
@@ -70,7 +88,7 @@ test_api_endpoints() {
     fi
 
     # Test stats endpoint
-    if curl -s http://localhost:8080/api/stats > /dev/null; then
+    if curl -s http://$SERVER_IP:8080/api/stats > /dev/null; then
         log_success "Stats API endpoint working"
     else
         log_error "Stats API endpoint not working"
@@ -84,7 +102,7 @@ test_domain_creation() {
     # Create test domain
     DOMAIN_DATA='{"name":"'$TEST_DOMAIN'","origin_url":"'$TEST_ORIGIN'"}'
 
-    if curl -s -X POST http://localhost:8080/api/domains \
+    if curl -s -X POST http://$SERVER_IP:8080/api/domains \
         -H "Content-Type: application/json" \
         -d "$DOMAIN_DATA" > /dev/null; then
         log_success "Domain creation API working"
@@ -98,7 +116,7 @@ test_caddy_config() {
     log_info "Testing Caddy configuration update..."
 
     # Check if domain was added to Caddy config
-    if curl -s http://localhost:2019/config/ | grep -q "$TEST_DOMAIN"; then
+    if curl -s http://$SERVER_IP:2019/config/ | grep -q "$TEST_DOMAIN"; then
         log_success "Caddy configuration updated successfully"
     else
         log_warning "Caddy configuration may not have been updated yet"
@@ -112,7 +130,7 @@ test_reverse_proxy() {
     sleep 3
 
     # Test proxy to our test domain
-    if curl -s -H "Host: $TEST_DOMAIN" http://localhost/ | grep -q "httpbin"; then
+    if curl -s -H "Host: $TEST_DOMAIN" http://$SERVER_IP/ | grep -q "httpbin"; then
         log_success "Reverse proxy working correctly"
     else
         log_warning "Reverse proxy test inconclusive (httpbin.org may be down)"
@@ -123,7 +141,7 @@ cleanup_test_data() {
     log_info "Cleaning up test data..."
 
     # Remove test domain
-    if curl -s -X DELETE http://localhost:8080/api/domains/1 > /dev/null; then
+    if curl -s -X DELETE http://$SERVER_IP:8080/api/domains/1 > /dev/null; then
         log_success "Test domain cleaned up"
     else
         log_warning "Could not clean up test domain"
@@ -142,6 +160,9 @@ run_tests() {
         log_error "Services are not running. Please start them first with ./install.sh"
         exit 1
     fi
+
+    # Detect server IP
+    SERVER_IP=$(detect_server_ip)
 
     # Wait for services to be fully ready
     log_info "Waiting for services to be ready..."

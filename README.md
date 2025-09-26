@@ -102,13 +102,13 @@ chmod +x validate-build.sh
 
 ### 6. Access the Dashboard
 
-- **Dashboard**: http://localhost:3000
-- **API**: http://localhost:8080
-- **Proxy**: http://localhost (for configured domains)
+- **Dashboard**: http://[SERVER_IP]:3000
+- **API**: http://[SERVER_IP]:8080
+- **Proxy**: http://[SERVER_IP] (for configured domains)
 
 ### 7. Configure Your First Domain
 
-1. Open the dashboard at http://localhost:3000
+1. Open the dashboard at http://[SERVER_IP]:3000
 2. Navigate to the "Domains" section
 3. Click "Add Domain"
 4. Enter your domain name (e.g., `example.com`)
@@ -156,6 +156,9 @@ DB_PATH=/app/data/waf.db
 # API Configuration
 CADDY_ADMIN_API=http://caddy:2019
 NEXT_PUBLIC_API_URL=http://localhost:8080
+
+# Note: The installation scripts will automatically detect your server IP
+# and display the correct URLs during installation
 
 # Security (Change these!)
 ADMIN_USERNAME=admin
@@ -263,6 +266,7 @@ Example Rules:
 
    - Check if port 3000 is in use
    - Verify NEXT_PUBLIC_API_URL in .env
+   - Check if the server IP is correctly detected by the installation scripts
 
 3. **Domains not working**
 

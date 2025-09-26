@@ -149,18 +149,38 @@ start_services() {
     fi
 }
 
+detect_server_ip() {
+    # Try to detect the primary network interface IP
+    # First try to get IP from default route
+    IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7}' | head -1)
+
+    if [ -z "$IP" ] || [ "$IP" = "" ]; then
+        # Fallback to hostname resolution
+        IP=$(hostname -I 2>/dev/null | awk '{print $1}' | head -1)
+    fi
+
+    if [ -z "$IP" ] || [ "$IP" = "" ]; then
+        # Final fallback to localhost
+        IP="localhost"
+    fi
+
+    echo "$IP"
+}
+
 create_initial_domain() {
     log_info "Creating initial domain configuration..."
 
     # Wait a bit more for the backend to be fully ready
     sleep 5
 
+    SERVER_IP=$(detect_server_ip)
+
     # Create a default domain if the API is available
-    if curl -s http://localhost:8080/api/health &> /dev/null; then
+    if curl -s http://$SERVER_IP:8080/api/health &> /dev/null; then
         log_info "Backend API is ready. You can now configure domains through the dashboard."
     else
         log_warning "Backend API not yet available. Services are starting up."
-        log_info "Please wait a few more moments, then visit http://localhost:3000 to configure your first domain."
+        log_info "Please wait a few more moments, then visit http://$SERVER_IP:3000 to configure your first domain."
     fi
 }
 
@@ -178,18 +198,21 @@ setup_firewall() {
 }
 
 print_success_message() {
+    # Detect server IP address
+    SERVER_IP=$(detect_server_ip)
+
     echo
     log_success "======================================"
     log_success "WAF Installation Completed Successfully!"
     log_success "======================================"
     echo
     log_info "Your WAF is now running with the following services:"
-    echo "  - Caddy Reverse Proxy: http://localhost:80, https://localhost:443"
-    echo "  - Backend API: http://localhost:8080"
-    echo "  - Dashboard: http://localhost:3000"
+    echo "  - Caddy Reverse Proxy: http://$SERVER_IP:80, https://$SERVER_IP:443"
+    echo "  - Backend API: http://$SERVER_IP:8080"
+    echo "  - Dashboard: http://$SERVER_IP:3000"
     echo
     log_info "Next steps:"
-    echo "1. Visit http://localhost:3000 to access the dashboard"
+    echo "1. Visit http://$SERVER_IP:3000 to access the dashboard"
     echo "2. Add your first domain through the web interface"
     echo "3. Configure anti-bot rules as needed"
     echo

@@ -328,12 +328,14 @@ main() {
     log_success "WAF Setup Completed Successfully!"
     log_success "====================================="
     echo
+    SERVER_IP=$(detect_server_ip)
+
     log_info "Your WAF system is now installed and running!"
     echo
     log_info "Access points:"
-    echo "  - Dashboard: http://localhost:3000"
-    log_info "  - API: http://localhost:8080"
-    echo "  - Proxy: http://localhost (for configured domains)"
+    echo "  - Dashboard: http://$SERVER_IP:3000"
+    log_info "  - API: http://$SERVER_IP:8080"
+    echo "  - Proxy: http://$SERVER_IP (for configured domains)"
     echo
     log_info "To manage services:"
     echo "  - Stop all services: cd $REPO_DIR && ./stop.sh"
@@ -350,6 +352,24 @@ main() {
     echo "  - Repository: $REPO_URL"
     echo
     log_info "Note: If you were added to the docker group, you may need to logout and login again."
+}
+
+detect_server_ip() {
+    # Try to detect the primary network interface IP
+    # First try to get IP from default route
+    IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7}' | head -1)
+
+    if [ -z "$IP" ] || [ "$IP" = "" ]; then
+        # Fallback to hostname resolution
+        IP=$(hostname -I 2>/dev/null | awk '{print $1}' | head -1)
+    fi
+
+    if [ -z "$IP" ] || [ "$IP" = "" ]; then
+        # Final fallback to localhost
+        IP="localhost"
+    fi
+
+    echo "$IP"
 }
 
 # Check if script is being sourced or executed
