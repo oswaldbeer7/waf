@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RequestLog } from "@/types";
+import { RequestLog } from "@/types/index";
 
 export function RecentActivity() {
   const [logs, setLogs] = useState<RequestLog[]>([]);

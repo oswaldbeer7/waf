@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Domain } from "@/types";
+import { Domain } from "@/types/index";
 import { Trash2, RefreshCw, ExternalLink } from "lucide-react";
 
 interface DomainListProps {

@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CreateDomainRequest } from "@/types";
+import { CreateDomainRequest } from "@/types/index";
 
 interface DomainFormProps {
   onSubmit: (domain: CreateDomainRequest) => Promise<void>;

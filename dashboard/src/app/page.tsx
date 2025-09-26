@@ -11,7 +11,7 @@ import {
 import { Overview } from "@/components/overview";
 import { RecentActivity } from "@/components/recent-activity";
 import { StatsCards } from "@/components/stats-cards";
-import { Statistics } from "@/types";
+import { Statistics } from "@/types/index";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<Statistics | null>(null);

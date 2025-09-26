@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Domain, CreateDomainRequest } from "@/types";
+import { Domain, CreateDomainRequest } from "@/types/index";
 import { DomainForm } from "@/components/domain-form";
 import { DomainList } from "@/components/domain-list";
 import { Plus } from "lucide-react";

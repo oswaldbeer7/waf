@@ -8,7 +8,7 @@ import {
   YAxis,
   Tooltip,
 } from "recharts";
-import { Statistics } from "@/types";
+import { Statistics } from "@/types/index";
 
 interface OverviewProps {
   stats: Statistics | null;

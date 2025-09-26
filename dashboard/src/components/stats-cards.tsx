@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Shield, Globe, TrendingUp } from "lucide-react";
-import { Statistics } from "@/types";
+import { Statistics } from "@/types/index";
 
 interface StatsCardsProps {
   stats: Statistics | null;
