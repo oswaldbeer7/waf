@@ -1,387 +1,121 @@
-# WAF - Multi-Domain Self-Hosted Reverse Proxy + Analytics + Anti-Bot Dashboard
+# WAF Reverse Proxy
 
-A production-ready, self-hosted reverse proxy solution that hides origin server IPs while providing comprehensive analytics and anti-bot protection across multiple domains.
+A simple Go-based reverse proxy server with built-in captcha protection and domain management.
 
 ## Features
 
-### 🌐 Multi-Domain Management
-
-- Add/remove domains through an intuitive web interface
-- Dynamic Caddy configuration updates
-- Hide all origin server IPs behind the proxy
-
-### 📊 Analytics Dashboard
-
-- Real-time request analytics per domain
-- Geographic visitor insights (country, ISP, ASN)
-- Request timeline and trends
-- Interactive charts and visualizations
-
-### 🛡️ Anti-Bot Protection
-
-- Domain-specific bot rules
-- IP enrichment using findip.net API
-- Configurable allow/deny rules based on:
-  - Country
-  - ASN (Autonomous System Number)
-  - ISP (Internet Service Provider)
-  - User type (hosting, commercial, etc.)
-
-### 🔧 Production Ready
-
-- Fully Dockerized deployment
-- SQLite database with caching
-- Auto-updates with Watchtower
-- Health checks and monitoring
-- Single-command installation
-
-## Quick Start
-
-### Installation Methods
-
-#### Method 1: One-Line Installation (Easiest)
-
-This method automatically installs all dependencies and sets up the complete system:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/oswaldbeer7/waf/main/install-from-github.sh | bash
-```
-
-#### Method 2: Complete Setup Script
-
-Installs all system dependencies (Docker, Node.js, Go, etc.) then sets up WAF:
-
-```bash
-git clone https://github.com/oswaldbeer7/waf.git
-cd waf
-chmod +x setup.sh
-./setup.sh
-```
-
-#### Method 3: Manual Installation
-
-If you already have Docker and dependencies installed:
-
-```bash
-git clone https://github.com/oswaldbeer7/waf.git
-cd waf
-chmod +x install.sh
-./install.sh
-```
-
-### 2. One-Line Installation (Recommended)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/oswaldbeer7/waf/main/install-from-github.sh | bash
-```
-
-### 3. Manual Installation (Alternative)
-
-```bash
-git clone https://github.com/oswaldbeer7/waf.git
-cd waf
-chmod +x install.sh setup.sh
-./install.sh
-```
-
-### 4. Complete Setup (Installs All Dependencies)
-
-```bash
-chmod +x setup.sh
-./setup.sh
-```
-
-### 5. Validate Installation
-
-Before building or deploying, validate that all files are present:
-
-```bash
-chmod +x validate-build.sh
-./validate-build.sh
-```
-
-### 6. Access the Dashboard
-
-- **Dashboard**: http://[SERVER_IP]:3000
-- **API**: http://[SERVER_IP]:8080
-- **Proxy**: http://[SERVER_IP] (for configured domains)
-
-_Note: The installation scripts automatically detect your server IP and configure the correct URLs._
-
-### 7. Configure Your First Domain
-
-1. Open the dashboard at http://[SERVER_IP]:3000 (IP detected automatically during installation)
-2. Navigate to the "Domains" section
-3. Click "Add Domain"
-4. Enter your domain name (e.g., `example.com`)
-5. Enter your origin server URL (e.g., `http://your-server:8080`)
-6. Click "Create Domain"
-
-### 8. Set Up Anti-Bot Rules (Optional)
-
-1. Go to the "Anti-Bot Rules" section
-2. Select your domain
-3. Add rules to allow or deny traffic based on criteria
-
-## Architecture
-
-```
-Internet → Caddy Proxy → Origin Servers
-              ↓
-        Request Logging → Backend API → Database
-              ↓
-        IP Enrichment → findip.net API (cached)
-              ↓
-        Anti-Bot Rules → Decision (allow/block)
-              ↓
-        Dashboard ← Analytics & Reports
-```
-
-### Services
-
-- **Caddy**: Reverse proxy with dynamic configuration
-- **Backend**: Go service managing domains, logs, and rules
-- **Dashboard**: Next.js web interface with shadcn/ui
-- **Database**: SQLite with request logs and configurations
-- **Watchtower**: Automatic container updates
-
-## Configuration
-
-### Environment Variables
-
-Edit the `.env` file to customize:
-
-```env
-# Database
-DB_PATH=/app/data/waf.db
-
-# API Configuration
-CADDY_ADMIN_API=http://caddy:2019
-NEXT_PUBLIC_API_URL=http://localhost:8080
-
-# Note: The installation scripts will automatically detect your server IP
-# and update NEXT_PUBLIC_API_URL in the .env file during installation
-
-# Security (Change these!)
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=changeme123
-
-# Optional
-WATCHTOWER_ENABLED=true
-LOG_LEVEL=info
-```
-
-### Domain Configuration
-
-Domains are configured through the web interface:
-
-- **Domain Name**: The public domain (e.g., `example.com`)
-- **Origin URL**: Your backend server (e.g., `http://192.168.1.100:8080`)
-
-### Anti-Bot Rules
-
-Create rules to control traffic:
-
-- **Allow/Deny**: Choose whether to allow or block matching traffic
-- **Field**: Country, ASN, ISP, or User Type
-- **Value**: Specific value to match against
-
-Example Rules:
-
-- Deny traffic from hosting providers
-- Allow only specific countries
-- Block known bot ASNs
+- **Reverse Proxy**: Routes traffic from configured domains to backend servers
+- **Captcha Protection**: Shows a simple "OK" button captcha before allowing access
+- **Domain Management**: REST API for adding/removing domains without authentication
+- **Thread-Safe**: Uses mutex locks for safe concurrent access to domain configurations
 
 ## API Endpoints
 
-### Domains
+### GET /api/domains
 
-- `GET /api/domains` - List all domains
-- `POST /api/domains` - Create new domain
-- `PUT /api/domains/{id}` - Update domain
-- `DELETE /api/domains/{id}` - Delete domain
+Returns a list of all configured domains.
 
-### Analytics
+**Example Response:**
 
-- `GET /api/stats` - Overall statistics
-- `GET /api/stats/{domain_id}` - Domain-specific stats
-- `GET /api/logs` - Recent request logs
-
-### Anti-Bot Rules
-
-- `GET /api/bots/rules?domain_id={id}` - Get rules for domain
-- `POST /api/bots/rules` - Create new rule
-- `PUT /api/bots/rules/{id}` - Update rule
-- `DELETE /api/bots/rules/{id}` - Delete rule
-
-## Security Considerations
-
-### Production Deployment
-
-1. **Change Default Credentials**
-
-   ```bash
-   # Edit .env file
-   ADMIN_USERNAME=your_secure_username
-   ADMIN_PASSWORD=your_strong_password
-   ```
-
-2. **Enable SSL/TLS**
-
-   ```env
-   # Add to .env
-   SSL_CERT_PATH=/path/to/certificate.pem
-   SSL_KEY_PATH=/path/to/private.key
-   ```
-
-3. **Firewall Configuration**
-
-   ```bash
-   sudo ufw allow 80
-   sudo ufw allow 443
-   sudo ufw allow 3000  # Dashboard (restrict to internal network)
-   ```
-
-4. **Reverse Proxy Setup**
-   - Use nginx or another reverse proxy in front of the WAF
-   - Restrict dashboard access to internal networks
-   - Enable rate limiting
-
-### Monitoring
-
-- Check logs: `docker-compose logs -f`
-- Database location: `./backend/data/waf.db`
-- Caddy logs: `./caddy/logs/`
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Services not starting**
-
-   ```bash
-   docker-compose logs
-   docker-compose down && docker-compose up -d
-   ```
-
-2. **Dashboard not accessible**
-
-   - Check if port 3000 is in use
-   - Verify NEXT_PUBLIC_API_URL in .env
-   - Check if the server IP is correctly detected by the installation scripts
-
-3. **Domains not working**
-
-   - Check domain configuration in dashboard
-   - Verify origin server is accessible from WAF container
-   - Check Caddy logs: `docker-compose logs caddy`
-
-4. **IP enrichment not working**
-   - Verify internet connectivity
-   - Check findip.net API rate limits
-   - Review cached data in database
-
-### Debug Commands
-
-```bash
-# View all logs
-docker-compose logs -f
-
-# Restart specific service
-docker-compose restart backend
-
-# Check service health
-curl http://localhost:8080/api/health
-curl http://localhost:3000/api/health
-
-# Database inspection
-docker-compose exec backend sqlite3 /app/data/waf.db ".tables"
+```json
+[
+  {
+    "name": "example.com",
+    "backend_url": "http://192.168.1.100:8080",
+    "enabled": true
+  }
+]
 ```
 
-## Development
+### POST /api/domains
 
-### Local Development
+Adds a new domain configuration.
 
-1. **Backend Development**
+**Request Body:**
+
+```json
+{
+  "name": "example.com",
+  "backend_url": "http://192.168.1.100:8080",
+  "enabled": true
+}
+```
+
+**Response:** Returns the created domain object with status 201.
+
+### DELETE /api/domains/{name}
+
+Removes a domain configuration.
+
+**Response:** Status 204 (No Content)
+
+## How It Works
+
+1. **Domain Resolution**: The proxy uses the HTTP Host header to determine which backend to route to
+2. **Captcha Check**: First-time visitors see a captcha page requiring them to click "OK - I'm Human"
+3. **Cookie-Based Session**: After passing captcha, users get a cookie that lasts 1 hour
+4. **Proxy Pass-Through**: Subsequent requests are proxied to the configured backend
+
+## Usage
+
+1. **Start the server:**
 
    ```bash
-   cd backend
-   go run main.go handlers.go database.go
+   # Start on default port 8080
+   ./proxy-server
+
+   # Or start on port 80 (requires root/sudo)
+   sudo PORT=80 ./proxy-server
+
+   # Or use the startup script
+   ./start.sh
    ```
 
-2. **Dashboard Development**
+2. **Add domains via API:**
 
    ```bash
-   cd dashboard
-   npm install
-   npm run dev
+   # If running on port 8080
+   curl -X POST http://localhost:8080/api/domains \
+     -H "Content-Type: application/json" \
+     -d '{"name": "example.com", "backend_url": "http://your-backend:8080", "enabled": true}'
+
+   # If running on port 80
+   curl -X POST http://localhost/api/domains \
+     -H "Content-Type: application/json" \
+     -d '{"name": "example.com", "backend_url": "http://your-backend:8080", "enabled": true}'
    ```
 
-3. **Database Schema**
-   - Tables: domains, requests, ip_cache, rules
-   - Located: `./backend/database.go`
+3. **Configure your DNS:**
+   Point your domain (e.g., example.com) to the server running this proxy
 
-### Building from Source
+4. **Test the proxy:**
 
-```bash
-# Build all images
-docker-compose build --no-cache
+   ```bash
+   # If running on port 8080
+   curl http://localhost:8080/ -H "Host: example.com"
 
-# Run tests (when implemented)
-go test ./backend/...
-npm test
-```
+   # Or visit in browser: http://localhost:8080 (with Host header set to example.com)
+   ```
 
-## Backup and Recovery
+   You should see the captcha page first, then be redirected to your backend
 
-### Creating Backups
+## Example Domain Configuration
 
 ```bash
-# Stop services
-./stop.sh
+# Add a domain that proxies to a local service
+curl -X POST http://localhost:8080/api/domains \
+  -H "Content-Type: application/json" \
+  -d '{"name": "myapp.local", "backend_url": "http://localhost:3000", "enabled": true}'
 
-# Backup data
-cp -r ./backend/data ./backup/
-cp -r ./caddy/data ./backup/
-cp ./caddy/Caddyfile ./backup/
-
-# Restart services
-./install.sh
+# Add a domain that proxies to a remote server
+curl -X POST http://localhost:8080/api/domains \
+  -H "Content-Type: application/json" \
+  -d '{"name": "api.example.com", "backend_url": "http://192.168.1.50:8080", "enabled": true}'
 ```
 
-### Restoring from Backup
+## Security Notes
 
-```bash
-# Stop services
-./stop.sh
-
-# Restore data
-cp -r ./backup/data ./backend/
-cp -r ./backup/caddy_data ./caddy/
-cp ./backup/Caddyfile ./caddy/
-
-# Restart services
-./install.sh
-```
-
-## Support
-
-- **Documentation**: Check this README
-- **Issues**: Open GitHub issues with logs
-- **Logs**: Include relevant docker-compose logs
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
----
-
-**Note**: This is a production-ready system. Always test in a staging environment before deploying to production. Regularly backup your data and monitor system health.
+- The API has **no authentication** - make sure to secure access to your chosen port (80 or 8080)
+- The captcha cookie lasts for 1 hour and is HTTP-only
+- Consider using a firewall to restrict API access to trusted IPs only
+- For production use on port 80, run with `sudo PORT=80 ./proxy-server`
