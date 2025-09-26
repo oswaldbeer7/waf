@@ -1,11 +1,11 @@
 # Multi-stage build for Next.js dashboard
 FROM node:18-alpine AS base
+RUN apk add --no-cache libc6-compat
+# Install pnpm globally so it's available in all stages
+RUN npm install -g pnpm@9
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
-# Install pnpm
-RUN npm install -g pnpm@9
 WORKDIR /app
 
 # Copy package files
