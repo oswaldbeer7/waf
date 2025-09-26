@@ -68,6 +68,8 @@ services:
     build:
       context: ./dashboard
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://backend:8080
     container_name: waf-dashboard
     restart: unless-stopped
     ports:

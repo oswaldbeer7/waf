@@ -26,6 +26,10 @@ RUN mkdir -p public
 # Next.js collects completely anonymous telemetry data about general usage.
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Set the API URL for the build process
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 RUN pnpm build
 
 # Production image, copy all the files and run next
