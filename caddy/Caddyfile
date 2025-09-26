@@ -1,0 +1,33 @@
+# Main Caddy configuration for WAF
+# This will be updated dynamically by the backend service
+
+{
+    # Global options
+    admin 0.0.0.0:2019
+    http_port 80
+    https_port 443
+
+    # Logging
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+        format json
+    }
+
+    # Default catch-all for unmatched domains
+    *.localhost {
+        tls internal
+        reverse_proxy localhost:8080
+    }
+
+    # Health check endpoint for load balancer
+    health.localhost {
+        tls internal
+        respond "OK" 200
+    }
+}
+
+# Dynamic domain configurations will be inserted here by the backend
+# Each domain will have its own site block with reverse_proxy to origin
