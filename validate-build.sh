@@ -82,7 +82,14 @@ validate_dashboard() {
     local errors=0
 
     check_file "$dashboard_dir/package.json" "Package.json file" || errors=$((errors+1))
-    check_file "$dashboard_dir/package-lock.json" "Package lock file" || errors=$((errors+1))
+
+    # Check for either npm or pnpm lock file
+    if [ -f "$dashboard_dir/package-lock.json" ] || [ -f "$dashboard_dir/pnpm-lock.yaml" ]; then
+        log_success "Package lock file: ✓"
+    else
+        log_error "Package lock file: ✗ MISSING"
+        errors=$((errors+1))
+    fi
     check_file "$dashboard_dir/Dockerfile" "Dashboard Dockerfile" || errors=$((errors+1))
     check_file "$dashboard_dir/next.config.js" "Next.js config" || errors=$((errors+1))
     check_file "$dashboard_dir/tsconfig.json" "TypeScript config" || errors=$((errors+1))
