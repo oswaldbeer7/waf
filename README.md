@@ -106,7 +106,7 @@ chmod +x validate-build.sh
 - **API**: http://[SERVER_IP]:8080
 - **Proxy**: http://[SERVER_IP] (for configured domains)
 
-*Note: The installation scripts automatically detect your server IP and configure the correct URLs.*
+_Note: The installation scripts automatically detect your server IP and configure the correct URLs._
 
 ### 7. Configure Your First Domain
 
