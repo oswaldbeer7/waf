@@ -120,7 +120,17 @@ func main() {
     corsHandler := handlers.CORS(
         handlers.AllowedOrigins([]string{"*"}),
         handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
-        handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
+        handlers.AllowedHeaders([]string{
+            "X-Requested-With",
+            "Content-Type",
+            "Authorization",
+            "Accept",
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+        }),
+        handlers.ExposedHeaders([]string{"Content-Length"}),
+        handlers.AllowCredentials(),
     )(router)
 
     // Server configuration

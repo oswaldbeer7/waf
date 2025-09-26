@@ -106,9 +106,11 @@ chmod +x validate-build.sh
 - **API**: http://[SERVER_IP]:8080
 - **Proxy**: http://[SERVER_IP] (for configured domains)
 
+*Note: The installation scripts automatically detect your server IP and configure the correct URLs.*
+
 ### 7. Configure Your First Domain
 
-1. Open the dashboard at http://[SERVER_IP]:3000
+1. Open the dashboard at http://[SERVER_IP]:3000 (IP detected automatically during installation)
 2. Navigate to the "Domains" section
 3. Click "Add Domain"
 4. Enter your domain name (e.g., `example.com`)
@@ -158,7 +160,7 @@ CADDY_ADMIN_API=http://caddy:2019
 NEXT_PUBLIC_API_URL=http://localhost:8080
 
 # Note: The installation scripts will automatically detect your server IP
-# and display the correct URLs during installation
+# and update NEXT_PUBLIC_API_URL in the .env file during installation
 
 # Security (Change these!)
 ADMIN_USERNAME=admin

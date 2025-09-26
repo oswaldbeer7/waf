@@ -57,14 +57,24 @@ check_dependencies() {
 }
 
 create_env_file() {
+    # Detect server IP for API URL
+    SERVER_IP=$(detect_server_ip)
+
     if [ -f "$ENV_FILE" ]; then
-        log_warning ".env file already exists. Skipping creation."
-        return
-    fi
+        log_info "Updating existing .env file with server IP..."
 
-    log_info "Creating .env file with default configuration..."
+        # Update the NEXT_PUBLIC_API_URL line
+        if grep -q "^NEXT_PUBLIC_API_URL=" "$ENV_FILE"; then
+            sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=http://$SERVER_IP:8080|" "$ENV_FILE"
+        else
+            echo "NEXT_PUBLIC_API_URL=http://$SERVER_IP:8080" >> "$ENV_FILE"
+        fi
 
-    cat > "$ENV_FILE" << 'EOF'
+        log_success "Updated .env file with server IP: $SERVER_IP"
+    else
+        log_info "Creating .env file with default configuration..."
+
+        cat > "$ENV_FILE" << EOF
 # WAF Configuration
 COMPOSE_PROJECT_NAME=waf
 
@@ -74,7 +84,7 @@ CADDY_ADMIN_API=http://caddy:2019
 LOG_LEVEL=info
 
 # Dashboard Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_URL=http://$SERVER_IP:8080
 
 # Optional: Watchtower for automatic updates
 WATCHTOWER_ENABLED=true
@@ -90,9 +100,10 @@ ADMIN_PASSWORD=changeme123
 # ACME_EMAIL=your-email@example.com
 EOF
 
-    log_success "Created .env file with default configuration"
-    log_warning "Please edit the .env file to customize your configuration"
-    log_warning "Important: Change the default admin password!"
+        log_success "Created .env file with server IP: $SERVER_IP"
+        log_warning "Please edit the .env file to customize your configuration"
+        log_warning "Important: Change the default admin password!"
+    fi
 }
 
 create_backup() {

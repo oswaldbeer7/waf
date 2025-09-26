@@ -212,7 +212,7 @@ run_tests() {
     fi
 
     log_info "You can now:"
-    log_info "1. Visit http://localhost:3000 to access the dashboard"
+    log_info "1. Visit http://$SERVER_IP:3000 to access the dashboard"
     log_info "2. Add your actual domains through the web interface"
     log_info "3. Configure anti-bot rules as needed"
 }
