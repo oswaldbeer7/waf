@@ -1,52 +1,50 @@
-# Project: Self-Hosted Reverse Proxy + Analytics + Anti-Bot Dashboard
+# Project: Multi-Domain Self-Hosted Reverse Proxy + Analytics + Anti-Bot Dashboard
 
 ## Overview
 
-This project is a **self-hosted reverse proxy** that hides an origin server’s IP while providing:
+This project is a **self-hosted reverse proxy manager** that hides origin server IPs while providing:
 
-- **Lightweight analytics dashboard**
-- **IP metadata enrichment via findip.net API**
-- **Anti-bot detection layer** using IP info
+- **Analytics dashboard** for multiple domains
+- **IP enrichment** using findip.net API (with caching)
+- **Anti-bot system** based on visitor IP metadata
+- **Domain management in the Web UI**
 
-It runs fully in **Docker**, with one-command installation via `install.sh`, deployable on **Linux/Ubuntu servers**.
+It runs on **Linux/Ubuntu servers**, fully Dockerized, and installs with a single `install.sh`.
 
 ---
 
 ## Goals
 
-- Hide the **origin server IP** behind a reverse proxy.
-- Collect and store visitor request logs (IP, time, path, headers).
-- Enrich IPs using **findip.net API** (with local caching).
-- Add basic **anti-bot detection**, e.g.:
-  - Flag/block traffic from hosting/VPN providers.
-  - Block specific ASNs or ISPs.
-  - Whitelist/blacklist countries.
-- Provide a **clean modern dashboard** with:
-  - Logs + IP enrichment
-  - Requests per country
-  - Requests per time interval
-  - Anti-bot flags (e.g. suspicious, blocked, allowed)
+- Manage **multiple domains** from a single dashboard:
+  - Add/remove domains via Web UI
+  - Configure origin servers per domain
+  - Apply custom anti-bot rules per domain
+- Hide all origin IPs behind the proxy
+- Collect request logs per domain
+- Enrich visitor IPs using findip.net
+- Provide dashboard insights grouped by domain
 
 ---
 
 ## Tech Stack
 
-- **Reverse Proxy:** Caddy (lightweight, auto-HTTPS, JSON logging)
+- **Reverse Proxy:** Caddy
+  - Dynamic configuration for multiple domains
+  - JSON logging per domain
 - **Backend / API:** Go service
-  - Parses logs from proxy
-  - Calls `https://api.findip.net/<IP>?token=...`
-  - Extracts: `country`, `isp`, `organization`, `asn`, `user_type`
-  - Caches responses (SQLite or in-memory + TTL)
-  - Stores requests in SQLite
-  - Implements anti-bot rules
-  - Exposes REST/GraphQL API (`/api/logs`, `/api/stats`, `/api/bots`)
-- **Database:** SQLite (file-based, no dependencies)
-- **Dashboard:** Next.js + Tailwind + shadcn/ui + Recharts
-- **Deployment:** Docker + Docker Compose
+  - Domain + origin management (CRUD)
+  - Stores domain configs in SQLite
+  - Parses proxy logs → enriches with findip.net
+  - Applies anti-bot rules
+  - Exposes API (`/api/domains`, `/api/logs`, `/api/stats`, `/api/bots`)
+- **Database:** SQLite
+  - Tables: domains, requests, ip_cache, rules
+- **Dashboard:** Next.js + Tailwind + shadcn/ui
+  - Domain management (list, add, delete)
+  - Domain selector for analytics
+  - Charts, tables, and anti-bot reports
+- **Deployment:** Docker Compose
 - **Installer:** Bash (`install.sh`)
-  - Installs Docker + Compose
-  - Clones repo
-  - Runs `docker compose up -d`
 
 ---
 
@@ -54,83 +52,77 @@ It runs fully in **Docker**, with one-command installation via `install.sh`, dep
 
 ### Flow
 
-1. Visitor → **Caddy proxy** → Origin server
-2. Caddy logs → **Go logger service**
-3. Logger service:
-   - Extracts visitor IP
-   - Checks SQLite cache → if missing → calls **findip.net API**
-   - Saves IP metadata + request data
-   - Runs anti-bot checks:
-     - Known hosting/VPN providers?
-     - Suspicious ASN/org/ISP?
-     - Blocked/allowed country?
-   - Stores decision in DB
-4. **Dashboard** (Next.js + shadcn) queries API and visualizes:
-   - Requests per country
-   - Requests timeline
-   - Visitor log table (IP, geo, ISP, decision)
-   - Anti-bot stats (blocked/allowed)
+1. Admin adds a **domain + origin server** in the Web UI
+2. Backend updates **Caddy config** for that domain (reverse proxy → origin)
+3. Visitor requests → Proxy logs → Logger service → DB
+4. Logger:
+   - Extracts IP + domain
+   - Checks cache or calls `findip.net`
+   - Saves request with enrichment + anti-bot decision
+5. Dashboard:
+   - Filter by domain
+   - Show analytics, requests, and anti-bot summary
 
 ---
 
 ## Features
 
-- Reverse proxy (hide origin IP)
-- Log collection (requests, headers, IPs)
-- Enrichment:
-  - IP → country, ASN, ISP, org, user type (via findip.net)
-  - Cached lookups to minimize API calls
-- Anti-bot:
-  - Flag traffic by rules (country, ASN, ISP, user type)
-  - Option to block directly at proxy level (return 403)
-- Dashboard:
-  - Requests table with enrichment info
-  - Charts by country and time
-  - Anti-bot summary (suspicious/blocked hits)
-- Dockerized deployment
-- One-command install script
+- **Domain management (via UI):**
+  - Add/remove domains
+  - Set origin IP/hostname
+  - Apply per-domain anti-bot rules
+- **Analytics (per domain):**
+  - Requests by country
+  - Requests timeline
+  - Visitor logs (IP, geo, ASN, ISP, decision)
+- **Anti-bot:**
+  - Rules per domain (ASN block, country allowlist, ISP block, user_type filter)
+  - Block or allow decisions logged
+- **UI:**
+  - Domain selector
+  - Tables and charts with shadcn components
+- **System:**
+  - Cached IP lookups
+  - Dockerized deployment
+  - Installable via `install.sh`
 
 ---
 
-## Deployment
+## Database Schema (simplified)
 
-- Run `install.sh`:
-  - Installs Docker + Compose
-  - Clones repo
-  - Runs `docker compose up -d`
-- Services:
-  - `proxy` → Caddy reverse proxy
-  - `logger-api` → Go service (log parser, enrichment, anti-bot, API)
-  - `dashboard` → Next.js app with shadcn UI
+- `domains` → id, name, origin_url, created_at
+- `requests` → id, domain_id, ip, path, ua, country, isp, org, asn, user_type, decision, timestamp
+- `ip_cache` → ip, country, isp, org, asn, user_type, last_checked
+- `rules` → id, domain_id, type (allow/deny), field (country/asn/isp/user_type), value
 
 ---
 
-## Anti-Bot Logic (Example)
+## Anti-Bot Logic
 
-- Block if `user_type == hosting`
-- Block if `isp` or `organization` contains known VPN/Proxy providers
-- Block by ASN blacklist (configurable)
-- Allow only specific countries (whitelist mode)
-- Cache IP decision results in SQLite
+- Domain-specific rule sets
+- Example:
+  - Block `user_type = hosting`
+  - Block `asn = 12345`
+  - Allow only `country in [DE, US, FR]`
 
 ---
 
 ## Future Extensions
 
-- Admin UI for editing anti-bot rules
-- Export logs/stats to CSV/JSON
-- Live request feed with WebSocket
-- Map view (Leaflet.js + visitor geo coords)
-- Multi-origin routing (load balancing)
+- UI-based editing of anti-bot rules
+- Per-domain TLS certificate management
+- Export logs per domain
+- Role-based admin access
+- WebSocket live traffic feed
 
 ---
 
 ## Notes for AI Prompting
 
-- Specify which component to generate (proxy config, Go service, API routes, dashboard, installer).
-- Always respect this **tech stack**.
-- Keep it lightweight and Docker-compatible.
-- For IP enrichment, use:
-  GET https://api.findip.net/
-  and cache results locally.
-- Only keep these fields: `country`, `isp`, `organization`, `asn`, `user_type`.
+When asking AI to generate code/configs:
+
+- Specify which component (proxy, backend, dashboard, installer).
+- Always support **multiple domains**.
+- Store domain configs in DB and reflect changes in proxy automatically.
+- API endpoints should include domain context.
+- Dashboard should filter/group analytics by domain.
