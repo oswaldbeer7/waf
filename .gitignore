@@ -59,6 +59,13 @@ backup/
 *.seed
 *.pid.lock
 
+# Build artifacts
+waf-backend
+*.exe
+*.dll
+*.so
+*.dylib
+
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov

@@ -13,17 +13,8 @@ echo "=========================================="
 echo
 echo "Installing WAF (Web Application Firewall)..."
 echo "This will install all dependencies and set up the complete system."
-echo
-echo "Press Ctrl+C to cancel if you haven't read the setup script."
-echo "Installation will begin in 10 seconds..."
-echo
-
-for i in {10..1}; do
-    echo "Starting in $i seconds..."
-    sleep 1
-done
-
-echo
+ 
+ 
 echo "Downloading and running setup script..."
 
 # Download and execute the setup script

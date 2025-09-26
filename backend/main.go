@@ -3,19 +3,16 @@ package main
 import (
     "context"
     "encoding/json"
-    "fmt"
-    "io"
     "log"
     "net/http"
     "os"
     "os/signal"
-    "strconv"
     "syscall"
     "time"
 
     "github.com/gorilla/mux"
+    "github.com/gorilla/handlers"
     "github.com/sirupsen/logrus"
-    _ "github.com/mattn/go-sqlite3"
     "github.com/joho/godotenv"
 )
 

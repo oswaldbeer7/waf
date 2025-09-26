@@ -1,8 +1,8 @@
 # Multi-stage build for Go backend
 FROM golang:1.21-alpine AS builder
 
-# Install build dependencies
-RUN apk add --no-cache gcc musl-dev sqlite-dev
+# Install build dependencies (no longer need sqlite-dev for CGO)
+RUN apk add --no-cache gcc musl-dev
 
 # Set working directory
 WORKDIR /app
@@ -20,7 +20,7 @@ RUN go mod verify
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -o waf-backend .
+RUN GOOS=linux go build -o waf-backend .
 
 # Final stage
 FROM alpine:latest

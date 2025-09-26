@@ -5,7 +5,6 @@ import (
     "net/http"
     "strconv"
     "strings"
-    "time"
 
     "github.com/gorilla/mux"
     "github.com/go-resty/resty/v2"
