@@ -43,8 +43,8 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy public directory if it exists (may be created during build)
-COPY --from=builder /app/public ./public 2>/dev/null || true
+# Ensure public directory exists (static assets are served from .next)
+RUN chown nextjs:nodejs public
 
 USER nextjs
 
