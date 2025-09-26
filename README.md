@@ -91,13 +91,22 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-### 5. Access the Dashboard
+### 5. Validate Installation
+
+Before building or deploying, validate that all files are present:
+
+```bash
+chmod +x validate-build.sh
+./validate-build.sh
+```
+
+### 6. Access the Dashboard
 
 - **Dashboard**: http://localhost:3000
 - **API**: http://localhost:8080
 - **Proxy**: http://localhost (for configured domains)
 
-### 6. Configure Your First Domain
+### 7. Configure Your First Domain
 
 1. Open the dashboard at http://localhost:3000
 2. Navigate to the "Domains" section
@@ -106,7 +115,7 @@ chmod +x setup.sh
 5. Enter your origin server URL (e.g., `http://your-server:8080`)
 6. Click "Create Domain"
 
-### 7. Set Up Anti-Bot Rules (Optional)
+### 8. Set Up Anti-Bot Rules (Optional)
 
 1. Go to the "Anti-Bot Rules" section
 2. Select your domain
