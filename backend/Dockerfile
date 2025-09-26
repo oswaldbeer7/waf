@@ -31,12 +31,11 @@ RUN apk --no-cache add ca-certificates sqlite
 # Create app directory
 WORKDIR /app
 
-# Copy binary and data directory
+# Copy binary
 COPY --from=builder /app/waf-backend .
-COPY --from=builder /app/data ./data
 
-# Create logs directory
-RUN mkdir -p /app/logs
+# Create directories (will be mounted as volumes in docker-compose)
+RUN mkdir -p /app/data /app/logs
 
 # Expose port
 EXPOSE 8080

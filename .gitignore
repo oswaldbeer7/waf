@@ -66,6 +66,12 @@ waf-backend
 *.so
 *.dylib
 
+# Docker volume directories (created at runtime)
+backend/data/
+backend/logs/
+caddy/data/
+caddy/logs/
+
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov
