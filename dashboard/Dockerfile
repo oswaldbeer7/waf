@@ -11,7 +11,7 @@ WORKDIR /app
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 RUN \
-  if [ -f pnpm-lock.yaml ]; then pnpm install --prod; \
+  if [ -f pnpm-lock.yaml ]; then pnpm install; \
   else echo "Lockfile not found." && exit 1; \
   fi
 
