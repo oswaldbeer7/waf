@@ -24,13 +24,11 @@
   </head>
   <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
-      <!-- Header -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">WAF Reverse Proxy</h1>
         <p class="text-gray-600">Manage your domains and SSL certificates</p>
       </div>
 
-      <!-- Add Domain Form -->
       <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Add New Domain</h2>
         <form id="domainForm" class="space-y-4">
@@ -102,7 +100,6 @@
         </form>
       </div>
 
-      <!-- Domains List -->
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold text-gray-800">
@@ -116,9 +113,7 @@
           </button>
         </div>
 
-        <div id="domainsList" class="space-y-4">
-          <!-- Domains will be loaded here -->
-        </div>
+        <div id="domainsList" class="space-y-4"></div>
 
         <div id="emptyState" class="text-center py-8 text-gray-500 hidden">
           <p>No domains configured yet. Add your first domain above!</p>
@@ -126,7 +121,6 @@
       </div>
     </div>
 
-    <!-- Edit Modal -->
     <div
       id="editModal"
       class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50"
@@ -217,13 +211,10 @@
     </div>
 
     <script>
-      // API base URL
       const API_BASE = window.location.origin + "/api";
 
-      // Load domains on page load
       document.addEventListener("DOMContentLoaded", loadDomains);
 
-      // Add domain form handler
       document
         .getElementById("domainForm")
         .addEventListener("submit", async (e) => {
@@ -260,7 +251,6 @@
           }
         });
 
-      // Edit form handler
       document
         .getElementById("editForm")
         .addEventListener("submit", async (e) => {
@@ -296,7 +286,6 @@
           }
         });
 
-      // Load domains function
       async function loadDomains() {
         try {
           const response = await fetch(`${API_BASE}/domains`);
@@ -367,7 +356,6 @@
         }
       }
 
-      // Edit domain function
       async function editDomain(domainName) {
         try {
           const response = await fetch(`${API_BASE}/domains`);
@@ -394,12 +382,10 @@
         }
       }
 
-      // Close edit modal
       function closeEditModal() {
         document.getElementById("editModal").classList.add("hidden");
       }
 
-      // Delete domain function
       async function deleteDomain(domainName) {
         if (
           confirm(`Are you sure you want to delete the domain "${domainName}"?`)
@@ -421,7 +407,6 @@
         }
       }
 
-      // Notification function
       function showNotification(message, type) {
         const notification = document.createElement("div");
         notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md text-white z-50 ${
@@ -436,7 +421,6 @@
         }, 3000);
       }
 
-      // Close modal when clicking outside
       document.getElementById("editModal").addEventListener("click", (e) => {
         if (e.target === e.currentTarget) {
           closeEditModal();
