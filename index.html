@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WAF Reverse Proxy - Domain Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: "#eff6ff",
+                500: "#3b82f6",
+                600: "#2563eb",
+                700: "#1d4ed8",
+              },
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">WAF Reverse Proxy</h1>
+        <p class="text-gray-600">Manage your domains and SSL certificates</p>
+      </div>
+
+      <!-- Add Domain Form -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Add New Domain</h2>
+        <form id="domainForm" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                for="domainName"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Domain Name</label
+              >
+              <input
+                type="text"
+                id="domainName"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="example.com"
+              />
+            </div>
+            <div>
+              <label
+                for="backendUrl"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Backend URL</label
+              >
+              <input
+                type="url"
+                id="backendUrl"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="http://your-backend:8080"
+              />
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-4">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="sslEnabled"
+                checked
+                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label for="sslEnabled" class="ml-2 block text-sm text-gray-900">
+                Generate SSL Certificate
+              </label>
+            </div>
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="domainEnabled"
+                checked
+                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label
+                for="domainEnabled"
+                class="ml-2 block text-sm text-gray-900"
+              >
+                Enable Domain
+              </label>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full md:w-auto bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-6 rounded-md transition duration-200"
+          >
+            Add Domain
+          </button>
+        </form>
+      </div>
+
+      <!-- Domains List -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-gray-800">
+            Configured Domains
+          </h2>
+          <button
+            onclick="loadDomains()"
+            class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm transition duration-200"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <div id="domainsList" class="space-y-4">
+          <!-- Domains will be loaded here -->
+        </div>
+
+        <div id="emptyState" class="text-center py-8 text-gray-500 hidden">
+          <p>No domains configured yet. Add your first domain above!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div
+      id="editModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50"
+    >
+      <div
+        class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white"
+      >
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Edit Domain</h3>
+          <form id="editForm" class="space-y-4">
+            <input type="hidden" id="editDomainId" />
+
+            <div>
+              <label
+                for="editDomainName"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Domain Name</label
+              >
+              <input
+                type="text"
+                id="editDomainName"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label
+                for="editBackendUrl"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Backend URL</label
+              >
+              <input
+                type="url"
+                id="editBackendUrl"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            <div class="flex items-center space-x-4">
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  id="editSslEnabled"
+                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label
+                  for="editSslEnabled"
+                  class="ml-2 block text-sm text-gray-900"
+                >
+                  Generate SSL Certificate
+                </label>
+              </div>
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  id="editDomainEnabled"
+                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label
+                  for="editDomainEnabled"
+                  class="ml-2 block text-sm text-gray-900"
+                >
+                  Enable Domain
+                </label>
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onclick="closeEditModal()"
+                class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md transition duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md transition duration-200"
+              >
+                Update
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // API base URL
+      const API_BASE = window.location.origin + "/api";
+
+      // Load domains on page load
+      document.addEventListener("DOMContentLoaded", loadDomains);
+
+      // Add domain form handler
+      document
+        .getElementById("domainForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const domainData = {
+            name: document.getElementById("domainName").value,
+            backend_url: document.getElementById("backendUrl").value,
+            enabled: document.getElementById("domainEnabled").checked,
+            ssl_enabled: document.getElementById("sslEnabled").checked,
+            auto_ssl: true,
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/domains`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(domainData),
+            });
+
+            if (response.ok) {
+              document.getElementById("domainForm").reset();
+              document.getElementById("sslEnabled").checked = true;
+              document.getElementById("domainEnabled").checked = true;
+              loadDomains();
+              showNotification("Domain added successfully!", "success");
+            } else {
+              showNotification("Failed to add domain", "error");
+            }
+          } catch (error) {
+            showNotification("Error: " + error.message, "error");
+          }
+        });
+
+      // Edit form handler
+      document
+        .getElementById("editForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const domainId = document.getElementById("editDomainId").value;
+          const domainData = {
+            name: document.getElementById("editDomainName").value,
+            backend_url: document.getElementById("editBackendUrl").value,
+            enabled: document.getElementById("editDomainEnabled").checked,
+            ssl_enabled: document.getElementById("editSslEnabled").checked,
+            auto_ssl: true,
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/domains/${domainId}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(domainData),
+            });
+
+            if (response.ok) {
+              closeEditModal();
+              loadDomains();
+              showNotification("Domain updated successfully!", "success");
+            } else {
+              showNotification("Failed to update domain", "error");
+            }
+          } catch (error) {
+            showNotification("Error: " + error.message, "error");
+          }
+        });
+
+      // Load domains function
+      async function loadDomains() {
+        try {
+          const response = await fetch(`${API_BASE}/domains`);
+          const domains = await response.json();
+
+          const container = document.getElementById("domainsList");
+          const emptyState = document.getElementById("emptyState");
+
+          if (domains.length === 0) {
+            container.innerHTML = "";
+            emptyState.classList.remove("hidden");
+            return;
+          }
+
+          emptyState.classList.add("hidden");
+
+          container.innerHTML = domains
+            .map(
+              (domain) => `
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <h3 class="font-medium text-gray-900">${
+                                      domain.name
+                                    }</h3>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      domain.enabled
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-red-100 text-red-800"
+                                    }">
+                                        ${
+                                          domain.enabled
+                                            ? "Enabled"
+                                            : "Disabled"
+                                        }
+                                    </span>
+                                    ${
+                                      domain.ssl_enabled
+                                        ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">SSL</span>'
+                                        : ""
+                                    }
+                                </div>
+                                <p class="text-sm text-gray-600 mb-1">Backend: ${
+                                  domain.backend_url
+                                }</p>
+                                <p class="text-xs text-gray-500">Auto SSL: ${
+                                  domain.auto_ssl ? "Yes" : "No"
+                                }</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="editDomain('${domain.name}')"
+                                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition duration-200">
+                                    Edit
+                                </button>
+                                <button onclick="deleteDomain('${domain.name}')"
+                                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition duration-200">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `
+            )
+            .join("");
+        } catch (error) {
+          showNotification("Error loading domains: " + error.message, "error");
+        }
+      }
+
+      // Edit domain function
+      async function editDomain(domainName) {
+        try {
+          const response = await fetch(`${API_BASE}/domains`);
+          const domains = await response.json();
+          const domain = domains.find((d) => d.name === domainName);
+
+          if (domain) {
+            document.getElementById("editDomainId").value = domain.name;
+            document.getElementById("editDomainName").value = domain.name;
+            document.getElementById("editBackendUrl").value =
+              domain.backend_url;
+            document.getElementById("editSslEnabled").checked =
+              domain.ssl_enabled;
+            document.getElementById("editDomainEnabled").checked =
+              domain.enabled;
+
+            document.getElementById("editModal").classList.remove("hidden");
+          }
+        } catch (error) {
+          showNotification(
+            "Error loading domain for editing: " + error.message,
+            "error"
+          );
+        }
+      }
+
+      // Close edit modal
+      function closeEditModal() {
+        document.getElementById("editModal").classList.add("hidden");
+      }
+
+      // Delete domain function
+      async function deleteDomain(domainName) {
+        if (
+          confirm(`Are you sure you want to delete the domain "${domainName}"?`)
+        ) {
+          try {
+            const response = await fetch(`${API_BASE}/domains/${domainName}`, {
+              method: "DELETE",
+            });
+
+            if (response.ok) {
+              loadDomains();
+              showNotification("Domain deleted successfully!", "success");
+            } else {
+              showNotification("Failed to delete domain", "error");
+            }
+          } catch (error) {
+            showNotification("Error: " + error.message, "error");
+          }
+        }
+      }
+
+      // Notification function
+      function showNotification(message, type) {
+        const notification = document.createElement("div");
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md text-white z-50 ${
+          type === "success" ? "bg-green-500" : "bg-red-500"
+        }`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+
+      // Close modal when clicking outside
+      document.getElementById("editModal").addEventListener("click", (e) => {
+        if (e.target === e.currentTarget) {
+          closeEditModal();
+        }
+      });
+    </script>
+  </body>
+</html>
