@@ -413,20 +413,16 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if HTTP to HTTPS redirect is enabled and request is HTTP
 	if domain.ForceHTTPS && r.TLS == nil && r.Header.Get("X-Forwarded-Proto") != "https" {
 		httpsURL := "https://" + r.Host + r.RequestURI
 		http.Redirect(w, r, httpsURL, http.StatusMovedPermanently)
 		return
 	}
 
-	// Check if captcha is enabled for this domain
 	if domain.CaptchaEnabled && r.URL.Path == "/" {
 		captchaCookie, err := r.Cookie("captcha_passed_" + domain.Name)
 		if err == nil && captchaCookie.Value == "true" {
-			// Captcha already passed, proceed to backend
 		} else if r.Method == "POST" {
-			// Set captcha cookie for this domain
 			http.SetCookie(w, &http.Cookie{
 				Name:     "captcha_passed_" + domain.Name,
 				Value:    "true",
@@ -434,11 +430,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   3600,
 				HttpOnly: true,
 			})
-			// Redirect to GET request to show the captcha passed state
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		} else {
-			// Serve captcha page
 			serveCaptchaPage(w, r, domain.Name)
 			return
 		}
@@ -818,7 +812,6 @@ func main() {
 		"mgmt_https_port", config.MgmtHTTPSPort)
 
 	domainStore.AddDomain("localhost", "http://localhost:8080", true)
-	// Update localhost domain to have ForceHTTPS enabled by default
 	if domain, exists := domainStore.GetDomain("localhost"); exists {
 		domain.ForceHTTPS = true
 		domainStore.UpdateDomain("localhost", domain)
