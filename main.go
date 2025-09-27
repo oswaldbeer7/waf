@@ -65,6 +65,8 @@ type Domain struct {
 	CertPath     string `json:"cert_path,omitempty"`
 	KeyPath      string `json:"key_path,omitempty"`
 	AutoSSL      bool   `json:"auto_ssl"`
+	ForceHTTPS   bool   `json:"force_https"`
+	CaptchaEnabled bool `json:"captcha_enabled"`
 }
 
 type CertificateManager struct {
@@ -125,6 +127,8 @@ func (ds *DomainStore) AddDomain(name, backendURL string, enabled bool) {
 		Enabled:    enabled,
 		SSLEnabled: false,
 		AutoSSL:    true,
+		ForceHTTPS: false,
+		CaptchaEnabled: false,
 	}
 }
 
@@ -409,6 +413,37 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if HTTP to HTTPS redirect is enabled and request is HTTP
+	if domain.ForceHTTPS && r.TLS == nil && r.Header.Get("X-Forwarded-Proto") != "https" {
+		httpsURL := "https://" + r.Host + r.RequestURI
+		http.Redirect(w, r, httpsURL, http.StatusMovedPermanently)
+		return
+	}
+
+	// Check if captcha is enabled for this domain
+	if domain.CaptchaEnabled && r.URL.Path == "/" {
+		captchaCookie, err := r.Cookie("captcha_passed_" + domain.Name)
+		if err == nil && captchaCookie.Value == "true" {
+			// Captcha already passed, proceed to backend
+		} else if r.Method == "POST" {
+			// Set captcha cookie for this domain
+			http.SetCookie(w, &http.Cookie{
+				Name:     "captcha_passed_" + domain.Name,
+				Value:    "true",
+				Path:     "/",
+				MaxAge:   3600,
+				HttpOnly: true,
+			})
+			// Redirect to GET request to show the captcha passed state
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		} else {
+			// Serve captcha page
+			serveCaptchaPage(w, r, domain.Name)
+			return
+		}
+	}
+
 	backendURL, err := url.Parse(domain.BackendURL)
 	if err != nil {
 		http.Error(w, "Invalid backend URL", http.StatusInternalServerError)
@@ -439,11 +474,11 @@ func captchaMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		serveCaptchaPage(w, r)
+		serveCaptchaPage(w, r, "")
 	})
 }
 
-func serveCaptchaPage(w http.ResponseWriter, r *http.Request) {
+func serveCaptchaPage(w http.ResponseWriter, r *http.Request, domainName string) {
 	captchaHTML := `
 <!DOCTYPE html>
 <html>
@@ -497,7 +532,7 @@ func serveCaptchaPage(w http.ResponseWriter, r *http.Request) {
     <div class="captcha-container">
         <h1>Security Verification</h1>
         <p>For security purposes, please verify that you are human by clicking the button below.</p>
-        <form method="post" action="/captcha">
+        <form method="post" action="/">
             <button type="submit" class="ok-button">OK - I'm Human</button>
         </form>
     </div>
@@ -783,6 +818,11 @@ func main() {
 		"mgmt_https_port", config.MgmtHTTPSPort)
 
 	domainStore.AddDomain("localhost", "http://localhost:8080", true)
+	// Update localhost domain to have ForceHTTPS enabled by default
+	if domain, exists := domainStore.GetDomain("localhost"); exists {
+		domain.ForceHTTPS = true
+		domainStore.UpdateDomain("localhost", domain)
+	}
 
 	if err := certManager.InitializeACME(config.ACMEEmail); err != nil {
 		slog.Error("Failed to initialize ACME client", "error", err)

@@ -63,30 +63,58 @@
             </div>
           </div>
 
-          <div class="flex items-center space-x-4">
+          <div class="space-y-4">
+            <div class="flex items-center space-x-4">
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  id="sslEnabled"
+                  checked
+                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label
+                  for="sslEnabled"
+                  class="ml-2 block text-sm text-gray-900"
+                >
+                  Generate SSL Certificate
+                </label>
+              </div>
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  id="domainEnabled"
+                  checked
+                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label
+                  for="domainEnabled"
+                  class="ml-2 block text-sm text-gray-900"
+                >
+                  Enable Domain
+                </label>
+              </div>
+            </div>
             <div class="flex items-center">
               <input
                 type="checkbox"
-                id="sslEnabled"
-                checked
+                id="forceHttps"
                 class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
-              <label for="sslEnabled" class="ml-2 block text-sm text-gray-900">
-                Generate SSL Certificate
+              <label for="forceHttps" class="ml-2 block text-sm text-gray-900">
+                Force HTTPS (redirect HTTP to HTTPS)
               </label>
             </div>
             <div class="flex items-center">
               <input
                 type="checkbox"
-                id="domainEnabled"
-                checked
+                id="captchaEnabled"
                 class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
               <label
-                for="domainEnabled"
+                for="captchaEnabled"
                 class="ml-2 block text-sm text-gray-900"
               >
-                Enable Domain
+                Enable Captcha Protection
               </label>
             </div>
           </div>
@@ -161,31 +189,59 @@
               />
             </div>
 
-            <div class="flex items-center space-x-4">
+            <div class="space-y-4">
+              <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="editSslEnabled"
+                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label
+                    for="editSslEnabled"
+                    class="ml-2 block text-sm text-gray-900"
+                  >
+                    Generate SSL Certificate
+                  </label>
+                </div>
+                <div class="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="editDomainEnabled"
+                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label
+                    for="editDomainEnabled"
+                    class="ml-2 block text-sm text-gray-900"
+                  >
+                    Enable Domain
+                  </label>
+                </div>
+              </div>
               <div class="flex items-center">
                 <input
                   type="checkbox"
-                  id="editSslEnabled"
+                  id="editForceHttps"
                   class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
                 <label
-                  for="editSslEnabled"
+                  for="editForceHttps"
                   class="ml-2 block text-sm text-gray-900"
                 >
-                  Generate SSL Certificate
+                  Force HTTPS (redirect HTTP to HTTPS)
                 </label>
               </div>
               <div class="flex items-center">
                 <input
                   type="checkbox"
-                  id="editDomainEnabled"
+                  id="editCaptchaEnabled"
                   class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
                 <label
-                  for="editDomainEnabled"
+                  for="editCaptchaEnabled"
                   class="ml-2 block text-sm text-gray-900"
                 >
-                  Enable Domain
+                  Enable Captcha Protection
                 </label>
               </div>
             </div>
@@ -226,6 +282,8 @@
             enabled: document.getElementById("domainEnabled").checked,
             ssl_enabled: document.getElementById("sslEnabled").checked,
             auto_ssl: true,
+            force_https: document.getElementById("forceHttps").checked,
+            captcha_enabled: document.getElementById("captchaEnabled").checked,
           };
 
           try {
@@ -263,6 +321,9 @@
             enabled: document.getElementById("editDomainEnabled").checked,
             ssl_enabled: document.getElementById("editSslEnabled").checked,
             auto_ssl: true,
+            force_https: document.getElementById("editForceHttps").checked,
+            captcha_enabled:
+              document.getElementById("editCaptchaEnabled").checked,
           };
 
           try {
@@ -328,13 +389,31 @@
                                         ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">SSL</span>'
                                         : ""
                                     }
+                                    ${
+                                      domain.force_https
+                                        ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">HTTPS</span>'
+                                        : ""
+                                    }
+                                    ${
+                                      domain.captcha_enabled
+                                        ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">CAPTCHA</span>'
+                                        : ""
+                                    }
                                 </div>
                                 <p class="text-sm text-gray-600 mb-1">Backend: ${
                                   domain.backend_url
                                 }</p>
-                                <p class="text-xs text-gray-500">Auto SSL: ${
-                                  domain.auto_ssl ? "Yes" : "No"
-                                }</p>
+                                <div class="text-xs text-gray-500 space-y-1">
+                                  <p>Auto SSL: ${
+                                    domain.auto_ssl ? "Yes" : "No"
+                                  }</p>
+                                  <p>Force HTTPS: ${
+                                    domain.force_https ? "Yes" : "No"
+                                  }</p>
+                                  <p>Captcha Protection: ${
+                                    domain.captcha_enabled ? "Yes" : "No"
+                                  }</p>
+                                </div>
                             </div>
                             <div class="flex space-x-2">
                                 <button onclick="editDomain('${domain.name}')"
@@ -371,6 +450,10 @@
               domain.ssl_enabled;
             document.getElementById("editDomainEnabled").checked =
               domain.enabled;
+            document.getElementById("editForceHttps").checked =
+              domain.force_https;
+            document.getElementById("editCaptchaEnabled").checked =
+              domain.captcha_enabled;
 
             document.getElementById("editModal").classList.remove("hidden");
           }
