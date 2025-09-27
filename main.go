@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/go-acme/lego/v4/certificate"
-	"github.com/go-acme/lego/v4/challenge/http01"
 	"github.com/go-acme/lego/v4/lego"
 	"github.com/go-acme/lego/v4/registration"
 	"github.com/gorilla/mux"
@@ -57,7 +56,7 @@ var defaultConfig = Config{
 	DomainHTTPSPort: "443",
 	MgmtHTTPPort:    "3000",
 	MgmtHTTPSPort:   "8443",
-	ACMEEmail:       "admin@example.com",
+	ACMEEmail:       "jessicaneedh@gmx.de",
 	ACMEDirectory:   "https://acme-v02.api.letsencrypt.org/directory",
 	RateLimit:       100,
 	EnableCaptcha:   true,
@@ -227,6 +226,25 @@ func (cm *CertificateManager) GetCertificateFunc() func(*tls.ClientHelloInfo) (*
 	}
 }
 
+// Custom HTTP-01 challenge provider
+type customHTTPProvider struct {
+	challengeHandler http.Handler
+}
+
+// Present stores the challenge token for HTTP-01 validation
+func (p *customHTTPProvider) Present(domain, token, keyAuth string) error {
+	SetACMEChallengeToken(token, keyAuth)
+	slog.Info("Stored ACME challenge token", "domain", domain, "token", token)
+	return nil
+}
+
+// CleanUp removes the challenge token after validation
+func (p *customHTTPProvider) CleanUp(domain, token, keyAuth string) error {
+	RemoveACMEChallengeToken(token)
+	slog.Info("Cleaned up ACME challenge token", "domain", domain, "token", token)
+	return nil
+}
+
 // Initialize ACME client for Let's Encrypt
 func (cm *CertificateManager) InitializeACME(email string) error {
 	user := &ACMEUser{Email: email}
@@ -240,8 +258,9 @@ func (cm *CertificateManager) InitializeACME(email string) error {
 		return fmt.Errorf("failed to create ACME client: %v", err)
 	}
 
-	// Use HTTP-01 challenge with the domain HTTP port
-	err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "80"))
+	// Use custom HTTP-01 challenge provider
+	provider := &customHTTPProvider{}
+	err = client.Challenge.SetHTTP01Provider(provider)
 	if err != nil {
 		return fmt.Errorf("failed to set HTTP challenge provider: %v", err)
 	}
@@ -694,12 +713,57 @@ func createManagementRouter() *mux.Router {
 	return router
 }
 
+// ACME challenge store to hold challenge tokens temporarily
+var acmeChallenges = make(map[string]string)
+var acmeChallengesMutex sync.RWMutex
+
+// SetACMEChallengeToken stores a challenge token for ACME HTTP-01 validation
+func SetACMEChallengeToken(token, content string) {
+	acmeChallengesMutex.Lock()
+	defer acmeChallengesMutex.Unlock()
+	acmeChallenges[token] = content
+}
+
+// GetACMEChallengeToken retrieves a challenge token for ACME HTTP-01 validation
+func GetACMEChallengeToken(token string) (string, bool) {
+	acmeChallengesMutex.RLock()
+	defer acmeChallengesMutex.RUnlock()
+	content, exists := acmeChallenges[token]
+	return content, exists
+}
+
+// RemoveACMEChallengeToken removes a challenge token after validation
+func RemoveACMEChallengeToken(token string) {
+	acmeChallengesMutex.Lock()
+	defer acmeChallengesMutex.Unlock()
+	delete(acmeChallenges, token)
+}
+
 // handleACMEChallenge handles ACME HTTP-01 challenges
 func handleACMEChallenge(w http.ResponseWriter, r *http.Request) {
-	// This is a placeholder - in a real implementation, you'd need to store and retrieve
-	// challenge tokens. For now, we'll just return a dummy response
-	w.WriteHeader(http.StatusNotFound)
-	w.Write([]byte("Challenge not found"))
+	// Extract token from URL path
+	vars := mux.Vars(r)
+	token := vars["token"]
+
+	if token == "" {
+		http.Error(w, "Missing token", http.StatusBadRequest)
+		return
+	}
+
+	// Retrieve the challenge content
+	content, exists := GetACMEChallengeToken(token)
+	if !exists {
+		slog.Warn("ACME challenge token not found", "token", token)
+		http.Error(w, "Challenge not found", http.StatusNotFound)
+		return
+	}
+
+	// Set proper headers for ACME challenge
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(content))
+
+	slog.Info("Served ACME challenge", "token", token)
 }
 
 // rateLimitMiddleware implements basic rate limiting
